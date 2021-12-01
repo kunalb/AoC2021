@@ -16,23 +16,22 @@ if (Deno.args.length == 0 || Deno.args[0] == "1") {
     console.log(incs);
 } else {
     let incs = 0;
-    let sliding_window = []
+    let sliding_window = [0, 0, 0]
+    let i = 0;
     let prev_sum = null;
 
     for await (const l of readLines(Deno.stdin)) {
         let val = parseInt(l, 10);
 
-        sliding_window.push(val);
-        if (sliding_window.length > 3) {
-            sliding_window.shift();
-        }
+        sliding_window[i % 3] = val;
+        i++;
 
         let curr_sum = sliding_window.reduce((a, b) => a + b, 0);
         if (prev_sum != null && curr_sum > prev_sum) {
             incs++;
         }
 
-        if (sliding_window.length == 3) {
+        if (i >= 3) {
             prev_sum = curr_sum;
         }
     }
