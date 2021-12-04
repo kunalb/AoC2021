@@ -1,16 +1,16 @@
 import {readLines} from "https://deno.land/std/io/bufio.ts";
 
-let rows = [];
+const rows = [];
 for await (const l of readLines(Deno.stdin)) {
     rows.push(l);
 }
 
-let numbers = rows[0].split(",").map(x => parseInt(x, 10));
+const numbers = rows[0].split(",").map(x => parseInt(x, 10));
 let i = 2;
 
-let boards = [];
+const boards = [];
 while (i < rows.length) {
-    let board = [];
+    const board = [];
     for (let j = 0; j < 5; j++) {
         board.push(rows[i].trim().split(/ +/).map(x => parseInt(x, 10)));
         i++;
@@ -70,9 +70,9 @@ function isPart1() {
 
 loop:
 for (const number of numbers) {
-    let remove = []
+    const remove = []
     let b = 0;
-    for (let board of boards) {
+    for (const board of boards) {
         markBoard(board, number);
         if (testBoard(board)) {
             if (isPart1() || boards.length == 1) {
@@ -85,7 +85,7 @@ for (const number of numbers) {
         b++;
     }
 
-    for (let r of remove.reverse()) {
+    for (const r of remove.reverse()) {
         boards.splice(r, 1);
     }
 }
