@@ -1,5 +1,8 @@
 import {readLines} from "https://deno.land/std/io/bufio.ts";
 
+x = {}
+x[[1, 2]] = 3;
+
 function isPart1() {
     return Deno.args.length == 0 || Deno.args[0] == "1";
 }
