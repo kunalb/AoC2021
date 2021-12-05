@@ -14,7 +14,7 @@ for await (const l of readLines(Deno.stdin)) {
     if (x1 == x2 || y1 == y2 || !isPart1()) {
         const dx = Math.sign(x2 - x1);
         const dy = Math.sign(y2 - y1);
-        for (let x = x1, y = y1; x != x2 + dx || y != y2 + dy; x += dx, y += dy){
+        for (let x = x1, y = y1; x != x2 + dx || y != y2 + dy; x += dx, y += dy) {
             const key = `${x},${y}`;
             grid.set(key, (grid.get(key) ?? 0) + 1);
         }
