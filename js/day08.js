@@ -30,11 +30,11 @@ for (const line of lines) {
 }
 console.log(sum);
 
-function find_match(signals, len) {
-    return find_matches(signals, len)[0];
+function findMatch(signals, len) {
+    return findMatches(signals, len)[0];
 }
 
-function find_matches(signals, len) {
+function findMatches(signals, len) {
     return signals.filter(signal => signal.length == len).map(x => new Set(x));
 }
 
@@ -52,7 +52,7 @@ function equalSet(as, bs) {
         return false;
     }
 
-    for (let a of as) {
+    for (const a of as) {
         if (!bs.has(a)) {
             return false;
         }
@@ -62,35 +62,31 @@ function equalSet(as, bs) {
 }
 
 function solve(signals, output) {
-    let n = {}, c = {};
-    n["1"] = find_match(signals, 2);
-    n["4"] = find_match(signals, 4);
-    n["7"] = find_match(signals, 3);
-    n["8"] = find_match(signals, 7);
-
-
-    n["069"] = find_matches(signals, 6);
-    n["235"] = find_matches(signals, 5);
-
+    const n = {}, c = {};
+    n[1] = findMatch(signals, 2);
+    n[4] = findMatch(signals, 4);
+    n[7] = findMatch(signals, 3);
+    n[8] = findMatch(signals, 7);
+    n["069"] = findMatches(signals, 6);
+    n["235"] = findMatches(signals, 5);
     c["a"] = [...n["7"]].filter(x => !n["1"].has(x))[0];
-
-    n["6"] = n["069"].filter(x => !isSubset(n["1"], x))[0];
+    n[6] = n["069"].filter(x => !isSubset(n["1"], x))[0];
     n["09"] = n["069"].filter(x => x != n["6"]);
     c["c"] = [...n["8"]].filter(x => !n["6"].has(x))[0];
     c["f"] = [...n["1"]].filter(x => x != c["c"])[0];
-    n["5"] = n["235"].filter(x => !x.has(c["c"]))[0];
+    n[5] = n["235"].filter(x => !x.has(c["c"]))[0];
     n["23"] = n["235"].filter(x => x != n["5"]);
-    n["2"] = n["23"].filter(x => !x.has(c["f"]))[0];
-    n["3"] = n["23"].filter(x => x != n["2"])[0];
-    n["0"] = n["09"].filter(x => !isSubset(n["3"], x))[0];
-    n["9"] = n["09"].filter(x => x != n["0"])[0];
+    n[2] = n["23"].filter(x => !x.has(c["f"]))[0];
+    n[3] = n["23"].filter(x => x != n["2"])[0];
+    n[0] = n["09"].filter(x => !isSubset(n["3"], x))[0];
+    n[9] = n["09"].filter(x => x != n["0"])[0];
 
     let number = 0;
-    for (let digit of output) {
+    for (const digit of output) {
         number *= 10;
-        let set_digit = new Set(digit);
+        const setDigit = new Set(digit);
         for (const [k, d] of Object.entries(n)) {
-            if (equalSet(set_digit, d)) {
+            if (equalSet(setDigit, d)) {
                 number += parseInt(k, 10);
                 continue;
             }
