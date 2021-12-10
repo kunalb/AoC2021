@@ -19,7 +19,7 @@ for (const line of lines) {
   const stack = [];
 
   for (const ch of line) {
-    if (ch == "(" || ch == "{" || ch == "<" || ch == "[") {
+    if (ch in matches) {
       stack.push(ch);
     } else {
       const top = stack.pop();
