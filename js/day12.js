@@ -41,6 +41,7 @@ function findPath(cur, visited = new Set()) {
   return paths;
 }
 
+// First attempt: .39s
 function findPath2(cur, visited = new Set(), doubled = false) {
   if (cur == "end") {
     return [
@@ -75,4 +76,31 @@ function findPath2(cur, visited = new Set(), doubled = false) {
   return paths;
 }
 
-console.log((isPart1 ? findPath("start") : findPath2("start")).length);
+
+// Faster find path: .31s -- with full array
+function fasterFindPath(pathSoFar, allPaths, doubled = false) {
+  const len = pathSoFar.length;
+  if (pathSoFar[len - 1] == "end") {
+    allPaths.push(pathSoFar);
+  }
+
+  const top = pathSoFar[len - 1];
+  for (const child of graph[top]) {
+    const visited = (child.toLowerCase() == child) && pathSoFar.indexOf(child) != -1;
+    if (doubled && visited) {
+      continue;
+    } else if (!doubled && child != "start" && child != "end" && visited) {
+      fasterFindPath([...pathSoFar, child], allPaths, true);
+    } else if (!visited) {
+      fasterFindPath([...pathSoFar, child], allPaths, doubled);
+    }
+  }
+}
+
+if (isPart1) {
+  console.log(findPath("start").length);
+} else {
+  const allPaths = [];
+  fasterFindPath(["start"], allPaths);
+  console.log(allPaths.length);
+}
