@@ -78,21 +78,28 @@ function findPath2(cur, visited = new Set(), doubled = false) {
 
 
 // Faster find path: .31s -- with full array
-function fasterFindPath(pathSoFar, allPaths, doubled = false) {
+// Faster find path: .26s -- don't allocate intermediate arrays
+// Faster find path: .20s -- don't clone the array at all
+function fasterFindPath(pathSoFar, counter, doubled = false) {
   const len = pathSoFar.length;
   if (pathSoFar[len - 1] == "end") {
-    allPaths.push(pathSoFar);
+    counter.count++;
   }
 
   const top = pathSoFar[len - 1];
   for (const child of graph[top]) {
     const visited = (child.toLowerCase() == child) && pathSoFar.indexOf(child) != -1;
-    if (doubled && visited) {
-      continue;
-    } else if (!doubled && child != "start" && child != "end" && visited) {
-      fasterFindPath([...pathSoFar, child], allPaths, true);
-    } else if (!visited) {
-      fasterFindPath([...pathSoFar, child], allPaths, doubled);
+    try {
+      pathSoFar.push(child);
+      if (doubled && visited) {
+        continue;
+      } else if (!doubled && child != "start" && child != "end" && visited) {
+        fasterFindPath(pathSoFar, counter, true);
+      } else if (!visited) {
+        fasterFindPath(pathSoFar, counter, doubled);
+      }
+    } finally {
+      pathSoFar.pop();
     }
   }
 }
@@ -100,7 +107,7 @@ function fasterFindPath(pathSoFar, allPaths, doubled = false) {
 if (isPart1) {
   console.log(findPath("start").length);
 } else {
-  const allPaths = [];
-  fasterFindPath(["start"], allPaths);
-  console.log(allPaths.length);
+  const counter = {count: 0};
+  fasterFindPath(["start"], counter);
+  console.log(counter.count);
 }
