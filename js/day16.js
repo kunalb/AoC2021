@@ -35,59 +35,48 @@ function getBits(x, start, end) {
   return result;
 }
 
-let totalVersion = 0;
-
 function readPacket(x, pt = 0) {
   let result;
-  let version = getBits(x, pt, pt + 3);
-  totalVersion += version;
-  // console.log("version", version)
-
-  let typeid = getBits(x, pt + 3, pt + 6);
-  // console.log("typeid", typeid);
-
-  let currentBit = pt + 6;
+  const version = getBits(x, pt, pt + 3);
+  let totalVersion = version;
+  const typeid = getBits(x, pt + 3, pt + 6);
+  let bit = pt + 6;
 
   if (typeid == 4) {
     let num = 0n;
-    while (getBits(x, currentBit, currentBit + 1) == 1) {
-      let bits = BigInt(getBits(x, currentBit + 1, currentBit + 5));
-
+    while (getBits(x, bit, bit + 1) == 1) {
       num <<= 4n;
-      num += bits;
-      currentBit += 5;
+      num += BigInt(getBits(x, bit + 1, bit + 5));
+      bit += 5;
     }
     num <<= 4n;
-    num += BigInt(getBits(x, currentBit + 1, currentBit + 5));
-    assert(num > 0, "Overflow!");
+    num += BigInt(getBits(x, bit + 1, bit + 5));
+    assert(num >= 0, "Overflow!");
 
-    currentBit += 5;
-    // console.log("num", num);
+    bit += 5;
     result = num;
   } else { // operator
-    let lengthTypeId = getBits(x, currentBit, currentBit + 1);
-    // console.log({lengthTypeId});
+    const lengthTypeId = getBits(x, bit, bit + 1);
 
-    let vals = [];
+    const vals = [];
     if (lengthTypeId == 0) {
-      let subPacketsLength = getBits(x, currentBit + 1, currentBit + 1 + 15);
-      currentBit += 16;
-      // console.log({subPacketsLength});
-      let finalBit = currentBit + subPacketsLength;
-      while (currentBit < finalBit) {
-        let [nxBit, val] = readPacket(x, currentBit);
-        currentBit = nxBit;
+      const subPacketsLength = getBits(x, bit + 1, bit + 1 + 15);
+      bit += 16;
+      const finalBit = bit + subPacketsLength;
+      while (bit < finalBit) {
+        const {bit: nxBit, result: val, totalVersion: tv} = readPacket(x, bit);
+        bit = nxBit;
+        totalVersion += tv;
         vals.push(val);
       }
-      assert(currentBit == finalBit);
+      assert(bit == finalBit);
     } else {
-      let subPacketCount = getBits(x, currentBit + 1, currentBit + 1 + 11);
-      currentBit += 12;
-      // console.log({subPacketCount});
-
+      const subPacketCount = getBits(x, bit + 1, bit + 1 + 11);
+      bit += 12;
       for (let i = 0; i < subPacketCount; i++) {
-        let [nxBit, val] = readPacket(x, currentBit);
-        currentBit = nxBit;
+        const {bit: nxBit, result: val, totalVersion: tv} = readPacket(x, bit);
+        bit = nxBit;
+        totalVersion += tv;
         vals.push(val);
       }
     }
@@ -112,10 +101,9 @@ function readPacket(x, pt = 0) {
     } else {
       assert(false, "Unexpected position");
     }
-    console.log({result, vals, typeid})
   }
 
-  return [currentBit, result];
+  return {bit, result, totalVersion};
 }
 
 // console.log(getBits(readString("D2FE28"), 0, 3).toString(2));
@@ -123,24 +111,25 @@ function readPacket(x, pt = 0) {
 // readPacket(readString("D2FE28"));
 // readPacket(readString("38006F45291200"))
 // readPacket(readString("EE00D40C823060"));
-
-// console.log(totalVersion);
-
 // console.log(readPacket(readString("C200B40A82")))
 
-// for (let [test, expected] of  [
-//   ["C200B40A82", 3],
-//   ["04005AC33890", 54],
-//   ["880086C3E88112", 7],
-//   ["CE00C43D881120", 9],
-//   ["D8005AC2A8F0", 1],
-//   ["F600BC2D8F", 0],
-//   ["9C005AC2F8F0", 0],
-//   ["9C0141080250320F1802104A08", 1],
-// ]) {
-//   assert(readPacket(readString(test))[1] == expected, test);
-// }
+for (const [test, expected] of  [
+  ["C200B40A82", 3],
+  ["04005AC33890", 54],
+  ["880086C3E88112", 7],
+  ["CE00C43D881120", 9],
+  ["D8005AC2A8F0", 1],
+  ["F600BC2D8F", 0],
+  ["9C005AC2F8F0", 0],
+  ["9C0141080250320F1802104A08", 1],
+]) {
+  assert(readPacket(readString(test)).result == expected, test);
+}
 
-let bytes = readString(input);
-let result = readPacket(bytes);
-console.log(result, totalVersion);
+const bytes = readString(input);
+const result = readPacket(bytes);
+if (isPart1) {
+  console.log(result.totalVersion);
+} else {
+  console.log(result.result.toString());
+}
