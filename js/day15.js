@@ -26,27 +26,6 @@ if (!isPart1) {
   grid = grid2;
 }
 
-// TODO
-class Heap {
-  constructor(grid) {
-    this.grid = grid;
-    this.X = grid[0].length;
-    this.Y = grid.length;
-    this.tree = new Array(X * Y);
-  }
-
-  add(x, y) {
-  }
-
-  update(x, y) {
-  }
-
-  pop() {
-    let res = this.tree[0];
-    return res;
-  }
-}
-
 function djikstras(grid) {
   const X = grid[0].length;
   const Y = grid.length;
