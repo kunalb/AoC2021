@@ -8,14 +8,10 @@ for await (const l of readLines(Deno.stdin)) {
   lines.push(l);
 }
 
-let input = lines[0].substr("target area: ".length);
+const input = lines[0].substr("target area: ".length);
 let [xrange, yrange] = input.split(", ");
 xrange = xrange.split("=")[1].split("..").map((x) => parseInt(x, 10));
 yrange = yrange.split("=")[1].split("..").map((y) => parseInt(y, 10));
-console.log(xrange, yrange);
-
-// xrange = [20, 30];
-// yrange = [-10, -5];
 
 function testPoint(x, y) {
   return x >= xrange[0] && x <= xrange[1] && y >= yrange[0] && y <= yrange[1];
@@ -46,22 +42,22 @@ function* trajectory(vx, vy) {
   }
 }
 
-let maxy = 0;
-let total = 0;
-let vels = new Set();
+let maxY = 0;
+const vels = new Set();
 
+// Only works for positive x
 for (let vx = 0; vx <= xrange[1]; vx++) {
-  for (let vy = -2000; vy <= 2000; vy++) {
-    let local_maxy = 0;
-    for (let [x, y] of trajectory(vx, vy)) {
-      if (local_maxy < y) {
-        local_maxy = y;
+  for (let vy = Math.min(...yrange); vy <= 2000; vy++) {
+    let localMaxY = 0;
+    for (const [x, y] of trajectory(vx, vy)) {
+      if (localMaxY < y) {
+        localMaxY = y;
       }
 
       if (testPoint(x, y)) {
         vels.add(`${vx},${vy}`);
-        if (local_maxy > maxy) {
-          maxy = local_maxy;
+        if (localMaxY > maxY) {
+          maxY = localMaxY;
         }
       }
 
@@ -72,4 +68,8 @@ for (let vx = 0; vx <= xrange[1]; vx++) {
   }
 }
 
-console.log(maxy, vels.size);
+if (isPart1) {
+  console.log(maxY);
+} else {
+  console.log(vels.size);
+}
