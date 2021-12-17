@@ -7,3 +7,7 @@ const lines = [];
 for await (const l of readLines(Deno.stdin)) {
     lines.push(l);
 }
+
+if (import.meta.main) {
+  console.log(lines[0]);
+}
