@@ -1,13 +1,4 @@
-import {readLines} from "https://deno.land/std/io/mod.ts";
 import { assert } from "https://deno.land/std@0.117.0/testing/asserts.ts";
-
-const isPart1 = (Deno.args.length == 0 || Deno.args[0] == "1");
-
-const lines = [];
-for await (const l of readLines(Deno.stdin)) {
-    lines.push(l);
-}
-const input = lines[0];
 
 export function readString(input) {
   const inputArray = new Uint8Array(input.length / 2);
@@ -31,10 +22,16 @@ function getBits(x, start, end) {
 }
 
 export function readPacket(x, pt = 0) {
+  const packet = {}
+  packet["startBit"] = pt;
+  packet["children"] = [];
+
   let result;
-  const version = getBits(x, pt, pt + 3);
-  let totalVersion = version;
+  packet["version"] = getBits(x, pt, pt + 3);
+
   const typeid = getBits(x, pt + 3, pt + 6);
+  packet["typeid"] = typeid;
+
   let bit = pt + 6;
 
   if (typeid == 4) {
@@ -59,9 +56,10 @@ export function readPacket(x, pt = 0) {
       bit += 16;
       const finalBit = bit + subPacketsLength;
       while (bit < finalBit) {
-        const {bit: nxBit, result: val, totalVersion: tv} = readPacket(x, bit);
+        const child = readPacket(x, bit);
+        packet["children"].push(child);
+        const {endBit: nxBit, result: val, ..._} = child;
         bit = nxBit;
-        totalVersion += tv;
         vals.push(val);
       }
       assert(bit == finalBit);
@@ -69,9 +67,10 @@ export function readPacket(x, pt = 0) {
       const subPacketCount = getBits(x, bit + 1, bit + 1 + 11);
       bit += 12;
       for (let i = 0; i < subPacketCount; i++) {
-        const {bit: nxBit, result: val, totalVersion: tv} = readPacket(x, bit);
+        const child = readPacket(x, bit);
+        packet["children"].push(child);
+        const {endBit: nxBit, result: val, ..._} = child;
         bit = nxBit;
-        totalVersion += tv;
         vals.push(val);
       }
     }
@@ -98,36 +97,7 @@ export function readPacket(x, pt = 0) {
     }
   }
 
-  return {bit, result, totalVersion};
-}
-
-// console.log(getBits(readString("D2FE28"), 0, 3).toString(2));
-// console.log(getBits(readString("D2FE28"), 11, 16).toString(2));
-// readPacket(readString("D2FE28"));
-// readPacket(readString("38006F45291200"))
-// readPacket(readString("EE00D40C823060"));
-// console.log(readPacket(readString("C200B40A82")))
-
-for (const [test, expected] of  [
-  ["C200B40A82", 3],
-  ["04005AC33890", 54],
-  ["880086C3E88112", 7],
-  ["CE00C43D881120", 9],
-  ["D8005AC2A8F0", 1],
-  ["F600BC2D8F", 0],
-  ["9C005AC2F8F0", 0],
-  ["9C0141080250320F1802104A08", 1],
-]) {
-  assert(readPacket(readString(test)).result == expected, test);
-}
-
-const bytes = readString(input);
-const result = readPacket(bytes);
-
-if (import.meta.main) {
-  if (isPart1) {
-    console.log(result.totalVersion);
-  } else {
-    console.log(result.result.toString());
-  }
+  packet["result"] = result;
+  packet["endBit"] = bit;
+  return packet;
 }
