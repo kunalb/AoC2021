@@ -1,5 +1,6 @@
 import { readLines } from "https://deno.land/std/io/mod.ts";
-import { assert } from "https://deno.land/std@0.117.0/testing/asserts.ts";
+
+const isPart1 = (Deno.args.length == 0 || Deno.args[0] == "1");
 
 const lines = [];
 for await (const l of readLines(Deno.stdin)) {
@@ -22,6 +23,40 @@ let steps = lines.map((line) => line.split(" "))
   .map((x) => {
     return { "action": x[0], "ranges": parseRange(x[1]) };
   });
+
+if (isPart1) {
+  let on = {};
+  for (let step of steps) {
+    for (let x = step.ranges[0].range[0]; x <= step.ranges[0].range[1]; x++) {
+      if (x < -50 || x > 50) {
+        continue;
+      }
+      for (let y = step.ranges[1].range[0]; y <= step.ranges[1].range[1]; y++) {
+        if (y < -50 || y > 50) {
+          continue;
+        }
+        for (
+          let z = step.ranges[2].range[0];
+          z <= step.ranges[2].range[1];
+          z++
+        ) {
+          if (isPart1 && (z < -50 || z > 50)) {
+            continue;
+          }
+          let key = `${x},${y},${z}`;
+          if (step.action == "on") {
+            on[key] = true;
+          } else {
+            delete on[key];
+          }
+        }
+      }
+    }
+  }
+
+  console.log(Object.keys(on).length);
+  Deno.exit();
+}
 
 class Cuboid {
   constructor(...d) { // [x0, x1], [y0, y1], [z0, z1]
@@ -62,9 +97,9 @@ class Cuboid {
       }
     }
 
-    result.intersection = cube_reduce(result.intersection);
-    result.a = cube_reduce(result.a);
-    result.b = cube_reduce(result.b);
+    result.intersection = cubeReduce(result.intersection);
+    result.a = cubeReduce(result.a);
+    result.b = cubeReduce(result.b);
 
     return result;
   }
@@ -88,7 +123,7 @@ class Cuboid {
   }
 }
 
-function cube_reduce2(cuboids) {
+function cubeReduce(cuboids) {
   let changed;
   do {
     changed = false;
@@ -106,7 +141,9 @@ function cube_reduce2(cuboids) {
         if (choices.length < 2) continue;
         for (let a = 0; a < choices.length; a++) {
           for (let b = 0; b < choices.length; b++) {
-            if (a == b || choices[a].d == null || choices[b].d == null) continue;
+            if (a == b || choices[a].d == null || choices[b].d == null) {
+              continue;
+            }
 
             if (choices[a].d[i][1] == choices[b].d[i][0]) {
               changed = true;
@@ -119,39 +156,7 @@ function cube_reduce2(cuboids) {
     }
   } while (changed);
 
-  return cuboids.filter(x => x.d != null);
-}
-
-function cube_reduce(cuboids) {
-  return cube_reduce2(cuboids);
-
-  let changed;
-  do {
-    changed = false;
-    out:
-    for (let i = 0; i < 3; i++) {
-      for (let a = 0; a < cuboids.length; a++) {
-        for (let b = 0; b < cuboids.length; b++) {
-          if (a == b) continue;
-
-          let ca = cuboids[a];
-          let cb = cuboids[b];
-          if (
-            ca.d[i][1] == cb.d[i][0] &&
-            ca.d.every((aa, j) =>
-              j == i || aa[0] == cb.d[j][0] && aa[1] == cb.d[j][1]
-            )
-          ) {
-            ca.d[i][1] = cb.d[i][1];
-
-            cuboids.splice(b, 1);
-            changed = true;
-            break out;
-          }
-        }
-      }
-    }
-  } while (changed);
+  return cuboids.filter((x) => x.d != null);
 }
 
 function cube(dim) {
@@ -187,39 +192,36 @@ function overlap(as, bs) {
 // console.log(JSON.stringify(res));
 
 let lights = [];
-for (let step of steps) {
-  console.log(step.action);
-  let current = new Cuboid(
+for (const step of steps) {
+  const current = new Cuboid(
     ...step.ranges.map((r) => [r.range[0], r.range[1] + 1]),
   );
+  // if (lights.length <= 100) console.log(lights);
+  // console.log(step.action, lights.length, "+", current);
+
   let nextLights = [];
 
   if (step.action == "on") {
-    if (lights.length == 0) {
-      nextLights.push(current);
-    } else {
-      let active = [current];
-      for (let i = 0; i < lights.length; i++) {
-        let nextActive = [];
-        for (let j = 0; j < active.length; j++) {
-          let results = lights[i].combine(active[j]);
-          nextLights = nextLights.concat(results.a);
-          nextLights = nextLights.concat(results.intersection);
-          nextActive = nextActive.concat(results.b);
-        }
-        active = nextActive;
+    let active = [current];
+    for (let i = 0; i < lights.length; i++) {
+      const nextActive = [];
+      nextLights.push(lights[i]);
+      for (let j = 0; j < active.length; j++) {
+        const results = lights[i].combine(active[j]);
+        nextActive.push(...results.b);
       }
-      nextLights = nextLights.concat(active);
+      active = nextActive;
     }
+    nextLights.push(...active);
   } else {
     for (let i = 0; i < lights.length; i++) {
-      let results = lights[i].combine(current);
-      nextLights = nextLights.concat(results.a); // Subtract the cube from all active cubes
+      const results = lights[i].combine(current);
+      nextLights.push(...results.a); // Subtract the cube from all active cubes
     }
   }
 
-  nextLights = cube_reduce(nextLights);
+  nextLights = cubeReduce(nextLights);
   lights = nextLights;
 }
-
+// console.log(lights);
 console.log(lights.map((l) => l.size()).reduce((a, b) => (a + b), 0));

@@ -19,16 +19,10 @@ let steps = lines.map((line) => line.split(" "))
     return { "action": x[0], "ranges": parseRange(x[1]) };
   });
 
-console.log(steps);
-
 class Node {
   constructor(center) {
     this.center = center;
-    this.children = new Array(8).fill(0);
-  }
-
-  size() {
-    return this.d.map(([a, b]) => (b - a)).reduce((a, b) => a * b);
+    this.children = new Array(8).fill(null);
   }
 }
 
@@ -116,14 +110,19 @@ class Cuboid {
       s *= this.d[i][1] - this.d[i][0];
     }
     return s;
-    // return this.d.map(x => x[1] - x[0] + 1).reduce((a, b) => a * b, 1);
   }
 }
 
 
 class OctTree {
   constructor() {
-    this.root = Node([0, 0], [0, 0], [0, 0])
+    this.root = new Node([0, 0, 0]);
+  }
+
+  static identifyQuadrant(point, cuboid) {
+    if (point.some((p, i) => cuboid.d[i][0] <= p && p <= cuboid.d[i][1]))
+      return -1;
+
   }
 
   switchOn(cuboid) {
@@ -134,4 +133,16 @@ class OctTree {
 
   size() {
   }
+}
+
+let tree = new OctTree();
+for (let step of steps.slice(0, 2)) {
+  let cuboid = new Cuboid(...step.ranges);
+  console.log(step.action, cuboid);
+  if (step.action == "on") {
+    tree.switchOn(cuboid);
+  } else {
+    tree.switchOff(cuboid);
+  }
+  console.log(tree);
 }
