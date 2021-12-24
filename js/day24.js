@@ -1,4 +1,5 @@
 import { readLines } from "https://deno.land/std/io/mod.ts";
+import { assert } from "https://deno.land/std@0.117.0/testing/asserts.ts";
 
 const isPart1 = (Deno.args.length == 0 || Deno.args[0] == "1");
 
@@ -7,14 +8,14 @@ for await (const l of readLines(Deno.stdin)) {
   lines.push(l.split(" "));
 }
 
-console.log(lines.length, lines.length / 14, lines.length % 14);
+const parameters = [];
 for (let j = 0; j < 14; j++) {
-  let args = [];
+  const args = [];
   for (const i of [4, 5, 15]) {
-    let k = i + j * 18;
+    const k = i + j * 18;
     args.push(parseInt(lines[k][2]));
   }
-  console.log(`step(${args.join(",")})`)
+  parameters.push(args);
 }
 
 function evalProgram(program, inputs) {
@@ -59,95 +60,88 @@ function evalProgram(program, inputs) {
   return vars;
 }
 
-const testInput = `inp z
-inp x
-mul z 3
-eql z x`;
-
 function monad(input) {
-  const vars = evalProgram(lines, input.values());
-  return vars["z"] == 0;
+  return evalProgram(lines, input);
 }
-
-/*
-const value = new Array(14).fill(9);
-while (true) {
-  if (value.some((x) => x == 0)) {
-    continue;
-  }
-
-  if (monad(value)) {
-    break;
-  }
-
-  let start = value.length - 1;
-  while (start >= 0 && value[start] == 0) {
-    start--;
-  }
-
-  if (start >= 0) {
-    value[start]--;
-    for (let i = start + 1; i < value.length; i++) {
-      value[i] = 9;
-    }
-  }
-}
-*/
 
 function myMonad(inputs) {
-  let w = 0, x = 0, y = 0, z = 0;
+  let w = 0, x = 0, y = 0, z = 0, i = 0;
 
   function step(p1, p2, p3) {
-    // inp w
     w = inputs.next().value;
-    // mul x 0
-    x = 0;
-    // add x z
-    x = x + z;
-    // mod x 26
-    x = x % 26;
-    // div z 1
-    z = z / p1;
-    // add x 11
-    x = x + p2;
-    // eql x w
-    x = x == w ? 1 : 0;
-    // eql x 0
-    x = x == 0 ? 1 : 0;
-    // mul y 0
-    y = 0;
-    // add y 25
-    y = y + 25;
-    // mul y x
-    y = y * x;
-    // add y 1
-    y = y + 1;
-    // mul z y
-    z = z * y;
-    // mul y 0
-    y = 0;
-    // add y w
-    y = y + w;
-    // add y 1
-    y = y + p3;
-    // mul y x
-    y = y * x;
-    // add z y
-    z = z + y;
+    x = z % 26 + p2;
+    z = Math.floor(z / p1);
+    if (x != w) {
+      z = z * 26 + w + p3;
+    }
+    // console.log({step: ++i, w, x, y, z});
   }
 
-  step(1,11,1)
-  step(1,11,11)
-  step(1,14,1)
-  step(1,11,11)
-  step(26,-8,2)
-  step(26,-5,9)
-  step(1,11,7)
-  step(26,-13,11)
-  step(1,12,6)
-  step(26,-1,15)
-  step(1,14,7)
-  step(26,-5,1)
-  step(26,-4,8)
-  step(26,-8,6)
+  for (const parameter of parameters) {
+    step(...parameter);
+  }
+
+  return {x, y, w, z};
+}
+
+function makeConstrainedValues() {
+  const deps = [0];
+  const constraints = new Array(15).fill(null);
+  for (let i = 1; i <= parameters.length; i++) {
+    let p = parameters[i - 1];
+    if (p[0] == 1) {
+      deps.push(i);
+    } else {
+      constraints[i] = deps[deps.length - 1];
+      deps.pop();
+    }
+  }
+  // console.log(constraints);
+
+  const maxValues = new Array(15).fill(null);
+  const minValues = new Array(15).fill(null);
+  for (const [i, constraint] of constraints.entries()) {
+    if (constraint === null) continue;
+    maxValues[constraint] = Math.min(
+      9,
+      9 - parameters[constraint - 1][2] - parameters[i - 1][1]
+    );
+
+    const sum = parameters[constraint - 1][2] + parameters[i - 1][1];
+    minValues[constraint] = Math.max(1 - sum, 1);
+  }
+  // console.log(maxValues);
+  // console.log(minValues);
+
+  const maxAttempt = [];
+  const minAttempt = [];
+  for (let i = 1; i < maxValues.length; i++) {
+    maxAttempt.push(maxValues[i]);
+    minAttempt.push(minValues[i]);
+  }
+  for (const [i, constraint] of constraints.entries()) {
+    if (constraint == null) continue;
+    maxAttempt[i - 1] = maxAttempt[constraint - 1] + parameters[constraint - 1][2] + parameters[i - 1][1];
+    minAttempt[i - 1] = minAttempt[constraint - 1] + parameters[constraint - 1][2] + parameters[i - 1][1];
+  }
+
+  return [maxAttempt, minAttempt];
+}
+
+
+const values = makeConstrainedValues();
+
+for (let value of values) {
+  const res = myMonad(value.values());
+  assert(res["z"] == 0);
+
+  const res2 = monad(value.values());
+  assert(res2["z"] == 0);
+}
+
+if (isPart1) {
+  console.log(values[0].join(""));
+} else {
+  myMonad(values[1].values())
+  console.log(values[1].join(""));
 }
