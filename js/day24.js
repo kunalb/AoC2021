@@ -81,7 +81,7 @@ function myMonad(inputs) {
     step(...parameter);
   }
 
-  return {x, y, w, z};
+  return { x, y, w, z };
 }
 
 function makeConstrainedValues() {
@@ -104,7 +104,7 @@ function makeConstrainedValues() {
     if (constraint === null) continue;
     maxValues[constraint] = Math.min(
       9,
-      9 - parameters[constraint - 1][2] - parameters[i - 1][1]
+      9 - parameters[constraint - 1][2] - parameters[i - 1][1],
     );
 
     const sum = parameters[constraint - 1][2] + parameters[i - 1][1];
@@ -121,13 +121,14 @@ function makeConstrainedValues() {
   }
   for (const [i, constraint] of constraints.entries()) {
     if (constraint == null) continue;
-    maxAttempt[i - 1] = maxAttempt[constraint - 1] + parameters[constraint - 1][2] + parameters[i - 1][1];
-    minAttempt[i - 1] = minAttempt[constraint - 1] + parameters[constraint - 1][2] + parameters[i - 1][1];
+    maxAttempt[i - 1] = maxAttempt[constraint - 1] +
+      parameters[constraint - 1][2] + parameters[i - 1][1];
+    minAttempt[i - 1] = minAttempt[constraint - 1] +
+      parameters[constraint - 1][2] + parameters[i - 1][1];
   }
 
   return [maxAttempt, minAttempt];
 }
-
 
 const values = makeConstrainedValues();
 
@@ -142,6 +143,6 @@ for (let value of values) {
 if (isPart1) {
   console.log(values[0].join(""));
 } else {
-  myMonad(values[1].values())
+  myMonad(values[1].values());
   console.log(values[1].join(""));
 }
